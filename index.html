@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PillCompass</title>
+  <style>
+    html {
+      background-color: #bbbbbb;
+      padding: 0;
+      scroll-behavior: smooth;
+    }
+    body {
+      width: 80%;
+      min-height: calc(100vh - 4em);
+      margin: 0 auto;
+      padding: 2em;
+      background-color: #dddddd;
+      border-left: 20px solid #eeeeee;
+      border-right: 20px solid #eeeeee;
+      font-family: 'Montserrat', sans-serif;
+    }
+    h1, h3 {
+      color: #222222;
+      font-family: 'Montserrat', sans-serif;
+      text-align: center;
+      margin: 0;
+    }
+    h3 { margin-bottom: 1em; }
+    #questionBox p.question {
+      margin: 16pt auto;
+      color: #333333;
+      font-weight: normal;
+      width: 70%;
+      min-width: 500pt;
+      min-height: 144pt;
+      background-color: #eeeeee;
+      padding: 16pt;
+      border-radius: 16pt;
+      font-size: 36pt;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .button {
+      background-color: #2196f3;
+      border: none;
+      border-radius: 8pt;
+      color: white;
+      padding: 12pt;
+      width: 60%;
+      min-width: 400pt;
+      font-size: 24pt;
+      margin: 0.5em auto;
+      cursor: pointer;
+      display: block;
+      text-transform: uppercase;
+    }
+    .button:hover, .button:focus { background: #1687e0; }
+    .stronglyAgree { background: #1b5e20; }
+    .stronglyAgree:hover { background: #154a19; }
+    .agree         { background: #4caf50; }
+    .agree:hover   { background: #29942e; }
+    .neutral       { background: #949494; }
+    .neutral:hover { background: #656565; }
+    .disagree      { background: #f44336; }
+    .disagree:hover{ background: #d6271a; }
+    .stronglyDisagree { background: #b71c1c; }
+    .stronglyDisagree:hover { background: #a00e0e; }
+    canvas {
+      border: 1px solid #ccc;
+      display: block;
+      margin: 40px auto 10px auto;
+    }
+    #scoreBox {
+      margin-top: 20px;
+      font-size: 24pt;
+      color: #444444;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h3>PillCompass</h3>
+  <div id="questionBox"></div>
+  <canvas id="canvas" width="600" height="800" style="display:none;"></canvas>
+  <div id="scoreBox"></div>
+
+<script>
+  const questions = [
+    { text: "You shouldn’t have to ‘improve yourself’ just to be loved.", ideology: 0, polarity: "against" },
+    { text: "Earning respect as a man isn’t primarily about dominant behavior — other qualities matter more.", ideology: 0, polarity: "against" },
+    { text: "Men tend to reach their highest sexual market value after they've developed themselves professionally, physically, and mentally.", ideology: 0, polarity: "for" },
+    { text: "Charisma and self-presentation are powerful in attraction.", ideology: 0, polarity: "for" },
+    { text: "Behavior can create attraction that wasn’t initially present.", ideology: 2, polarity: "against" },
+    { text: "Fitness and fashion make you stand out in dating.", ideology: 2, polarity: "against" },
+    { text: "Being a good listener is more attractive than both being rich and good-looking.", ideology: 1, polarity: "for" },
+    { text: "Dating is hard for everyone, not just men.", ideology: 1, polarity: "for" },
+    { text: "Men care about a woman's looks more than women do about a man's looks.", ideology: 2, polarity: "against" },
+    { text: "Generally, women instantly filter men by appearance.", ideology: 2, polarity: "for" },
+    { text: "Rich ugly men are not desired by women, only their wealth is.", ideology: 2, polarity: "for" },
+    { text: "Men are valued by women mainly for what they build and provide.", ideology: 0, polarity: "for" },
+    { text: "Women usually prefer assholes over nice men.", ideology: 0, polarity: "for" },
+    { text: "Most women would consider dating only a small percentage (e.g., less than 10%) of men from their preferred age group.", ideology: 1, polarity: "against" },
+    { text: "Average-looking men are invisible in today’s dating landscape.", ideology: 2, polarity: "for" },
+    { text: "Kindness and emotional intelligence are the most attractive traits.", ideology: 1, polarity: "for" },
+    { text: "The dating world is more competitive than most people admit.", ideology: 1, polarity: "against" },
+    { text: "Mainstream advice about attraction usually misleads people about it.", ideology: 1, polarity: "against" },
+    { text: "Women are naturally drawn to high-status men.", ideology: 0, polarity: "for" },
+    { text: "Even if personality matters, it generally only does after physical attraction is established.", ideology: 2, polarity: "for" },
+    { text: "Most men are capable of becoming physically attractive in the eyes of the general public without undergoing invasive procedures.", ideology: 2, polarity: "against" },
+    { text: "Plastic surgery is the only real solution for a large amount of men.", ideology: 2, polarity: "for" },
+    { text: "Incels highly overrate the importance of romance and sex.", ideology: 1, polarity: "for" },
+    { text: "Rejection isn't a reflection of your worth.", ideology: 1, polarity: "for" },
+    { text: "What makes a person beautiful is often invisible to the eyes.", ideology: 1, polarity: "for" },
+    { text: "Men on average find a higher percentage of people physically attractive, than women do.", ideology: 2, polarity: "for" },
+    { text: "Nowadays, a young straight man who is 5ft 3 inches tall (160 cm) in the Western world is likely to be involuntarily celibate, with little hope of finding a partner.", ideology: 2, polarity: "for" },
+    { text: "Nowadays, a young straight man who is 5ft 6 inches tall(167.6 cm) in the Western world is likely to be involuntarily celibate, with little hope of finding a partner.", ideology: 2, polarity: "for" },
+    { text: "Most incels are involuntarily celibate because of their behavior.", ideology: 2, polarity: "against" },
+    { text: "Relationships shouldn’t be hierarchical — they should be partnerships.", ideology: 1, polarity: "for" },
+    { text: "Most women would rather have sex with a physically attractive man without him asking for consent, than agree to have sex with a subpar looking man.", ideology: 2, polarity: "for" },
+    { text: "Women are inherently shallow, deceptive, materialistic, lack depth, and are often unfaithful.", ideology: 0, polarity: "for" },
+    { text: "Women are generally turned off by virgin men.", ideology: 0, polarity: "for" },
+    { text: "A man's wealth influences how sexually attractive he is.", ideology: 0, polarity: "for" },
+	{ text: "Everyone has someone out there for them.", ideology: 1, polarity: "for" },
+	{ text: "A small percentage of men receive the majority of female sexual attention.", ideology: 1, polarity: "against" },
+    { text: "Women will be more attracted to a man, if they see that other women are attracted to him.", ideology: 0, polarity: "for" },
+	{ text: "Women are naturally hypergamous — they generally seek partners who are higher than them in status, income and attractiveness", ideology: 1, polarity: "against" },
+	{ text: "Women should have more rights than they currently do.", ideology: 1, polarity: "for" },
+	{ text: "A man who works out signals discipline, strength, and status — traits that will draw women to him.", ideology: 0, polarity: "for" },
+	{ text: "Behaving in a seductive, dominant, or outright obnoxious manner is highly attractive to women.", ideology: 0, polarity: "for" },
+	{ text: "If a man masters manipulation, he can always get what he wants from women.", ideology: 0, polarity: "for" }
+
+
+
+  ];
+
+	const beliefs = [
+	  { text: "I'm involuntarily celibate.", belief: "Incel" },
+	  { text: "I'm involuntarily celibate due to a mental condition.", belief: "Mentalcel", required: "Incel" },
+	  { text: "Women would rather have sex with a dog than with a subpar-looking man.", belief: "Dogpill believer" },
+	  { text: "Most women are bisexual and would prefer sex with a good-looking woman over an unattractive man.", belief: "Lesbianpill believer" },
+	  { text: "Very few women would be attracted to an autistic man who barely meets their looks threshold.", belief: "NTpiller" },
+	  { text: "A man should have multiple partners at the same time if he can.", belief: "Polygyny advocate" },
+	  { text: "I wouldn’t mind if my partner had sex with others while in a relationship with me.", belief: "Cuck" },
+	  { text: "I am a woman.", belief: "Foid" },
+	  { text: "Humanity is a disgusting, wretched, depraved species. If I had it in my power, I would stop at nothing to reduce every single one of you to mountains of skulls and rivers of blood.", belief: "Misanthrope" }
+	];
+
+  let scores = [0,0,0], counts = [0,0,0], current = 0;
+  let history = [];
+  let beliefAnswers = [];
+  const rawMap = {
+    "Strongly Agree": 1.000,
+    "Agree":          0.875,
+    "Neutral":        0.500,
+    "Disagree":       0.125,
+    "Strongly Disagree": 0.000
+  };
+  const btnClasses = ["stronglyAgree","agree","neutral","disagree","stronglyDisagree"];
+  const box = document.getElementById('questionBox');
+  const scoreBox = document.getElementById('scoreBox');
+
+  function renderQuestion() {
+    if (current < questions.length) {
+      const q = questions[current];
+      box.innerHTML = `<p class="question">${q.text}</p>` +
+        Object.keys(rawMap).map((label,i)=>
+          `<button class="button ${btnClasses[i]}">${label}</button>`
+        ).join('') +
+        `<button class="button neutral" style="background-color:#777;">Back</button>`;
+
+      box.querySelectorAll('button').forEach((b, i) => {
+        if (i < 5) {
+          b.onclick = () => {
+            const raw = Object.values(rawMap)[i];
+            const {ideology, polarity} = q;
+            const w = (polarity==="for" ? raw : (1 - raw));
+            scores[ideology] += w;
+            counts[ideology] += 1;
+            history.push({current, ideology, weight: w});
+            current++;
+            renderQuestion();
+          };
+        } else {
+          b.onclick = () => {
+            if (history.length > 0) {
+              const prev = history.pop();
+              current = prev.current;
+              scores[prev.ideology] -= prev.weight;
+              counts[prev.ideology] -= 1;
+              renderQuestion();
+            }
+          };
+        }
+      });
+    } else {
+      renderBeliefQuestion(current - questions.length);
+    }
+  }
+
+  function renderBeliefQuestion(index) {
+    while (index < beliefs.length) {
+      const q = beliefs[index];
+      if (q.required && !beliefAnswers.includes(q.required)) {
+        index++;
+        current++;
+        continue;
+      }
+
+      box.innerHTML = `<p class="question">${q.text}</p>` +
+        Object.keys(rawMap).map((label, i) =>
+          `<button class="button ${btnClasses[i]}">${label}</button>`
+        ).join('') +
+        `<button class="button neutral" style="background-color:#777;">Back</button>`;
+
+      box.querySelectorAll('button').forEach((b, i) => {
+        if (i < 5) {
+          b.onclick = () => {
+            const label = Object.keys(rawMap)[i];
+            if (label === "Strongly Agree" || label === "Agree") {
+              beliefAnswers.push(q.belief);
+            }
+            history.push({current});
+            current++;
+            renderBeliefQuestion(current - questions.length);
+          };
+        } else {
+          b.onclick = () => {
+            if (history.length > 0) {
+              const prev = history.pop();
+              current = prev.current;
+              renderBeliefQuestion(current - questions.length);
+            }
+          };
+        }
+      });
+      return;
+    }
+    finishAndDraw();
+  }
+
+  const canvas = document.getElementById('canvas'),
+        ctx = canvas.getContext('2d'),
+        center = {x:300,y:300}, scale = 220,
+        baseAngles = [0,120,240].map(d=> (d-90)*Math.PI/180),
+        axes = baseAngles.map(a=>({x:Math.cos(a),y:Math.sin(a)}));
+
+  function finishAndDraw() {
+    box.style.display = 'none';
+    canvas.style.display = 'block';
+
+    const hasFoid = beliefAnswers.includes("Foid");
+    const hasIncel = beliefAnswers.includes("Incel");
+    if (hasFoid && hasIncel) {
+      beliefAnswers = beliefAnswers.filter(b => b !== "Incel");
+      beliefAnswers.push('"Femcel"');
+    }
+
+    const total = scores.reduce((s, w) => s + w, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const verts = axes.map(v => ({ x: center.x + v.x * scale, y: center.y + v.y * scale }));
+    const mids = verts.map((v, i) => {
+      const w = verts[(i + 1) % 3];
+      return { x: (v.x + w.x) / 2, y: (v.y + w.y) / 2 };
+    });
+
+    ['red', 'blue', 'black'].forEach((clr, i) => {
+      const prev = (i + 2) % 3;
+      ctx.beginPath();
+      ctx.moveTo(verts[i].x, verts[i].y);
+      ctx.lineTo(mids[i].x, mids[i].y);
+      ctx.lineTo(center.x, center.y);
+      ctx.lineTo(mids[prev].x, mids[prev].y);
+      ctx.closePath();
+      ctx.fillStyle = clr;
+      ctx.globalAlpha = 0.6;
+      ctx.fill();
+    });
+
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    verts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.strokeStyle = '#999';
+    ctx.lineWidth = 1;
+    mids.forEach(m => {
+      ctx.beginPath();
+      ctx.moveTo(center.x, center.y);
+      ctx.lineTo(m.x, m.y);
+      ctx.stroke();
+    });
+
+    if (total > 0) {
+      let sumX = 0, sumY = 0;
+      scores.forEach((s, i) => {
+        sumX += s * axes[i].x;
+        sumY += s * axes[i].y;
+      });
+      let normX = sumX / total, normY = sumY / total;
+      const avgs = scores.map((s, i) => counts[i] ? s / counts[i] : 0),
+            maxAvg = Math.max(...avgs);
+      if (maxAvg > 0) {
+        const div = 1 / maxAvg;
+        normX /= div;
+        normY /= div;
+      }
+      ctx.beginPath();
+      ctx.arc(center.x + normX * scale, center.y + normY * scale, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#600';
+      ctx.fill();
+      ctx.strokeStyle = '#300';
+      ctx.stroke();
+    }
+
+    const ideologyNames = ['Red', 'Blue', 'Black'];
+    ctx.fillStyle = '#222';
+    ctx.font = '20px Montserrat';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+
+    scores.forEach((s, i) => {
+      const avg = counts[i] > 0 ? (s / counts[i]) : 0;
+      const label = `${ideologyNames[i]}: ${(avg * 100).toFixed(1)}%`;
+      const offset = 30;
+      const labelX = verts[i].x;
+      const labelY = verts[i].y > center.y ? verts[i].y + offset : verts[i].y - offset;
+      ctx.fillText(label, labelX, labelY);
+    });
+
+ctx.font = '14px Montserrat';
+ctx.fillText("Each pill's percentage score reflects agreement with the pill's statements. They don't add to 100%.", center.x, 500);
+
+if (beliefAnswers.length) {
+  ctx.font = 'bold 20px Montserrat';
+  ctx.fillText("Additional Results", center.x, 530);
+  ctx.font = '16px Montserrat';
+  beliefAnswers.forEach((b, i) => {
+    ctx.fillText("- " + b, center.x, 560 + i * 20);
+  });
+}
+
+  }
+
+  renderQuestion();
+</script>
+<p style="text-align: center; font-size: 14pt; color: #555; margin-top: 60px;">
+  Authors:<br>
+  <strong>ChatGPTcel (99%)</strong><br>
+  <strong>Me (1%)</strong>
+</p>
+
+</body>
+</html>
